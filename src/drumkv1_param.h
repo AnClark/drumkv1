@@ -75,7 +75,11 @@ namespace drumkv1_param
 	float paramSafeValue(drumkv1::ParamIndex index, float fValue);
 	float paramValue(drumkv1::ParamIndex index, float fScale);
 	float paramScale(drumkv1::ParamIndex index, float fValue);
+	float paramMinValue(drumkv1::ParamIndex index);
+	float paramMaxValue(drumkv1::ParamIndex index);
 	bool paramFloat(drumkv1::ParamIndex index);
+	bool paramBool(drumkv1::ParamIndex index);
+	bool paramInt(drumkv1::ParamIndex index);
 
 	// Load/save and convert canonical/absolute filename helpers.
 	QString loadFilename(const QString& sFilename);
