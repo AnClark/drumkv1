@@ -206,21 +206,35 @@ float drumkv1_param::paramScale ( drumkv1::ParamIndex index, float fValue )
 		return fScale;
 }
 
+
 float drumkv1_param::paramMinValue(drumkv1::ParamIndex index)
 {
 	return drumkv1_params[index].min;
 }
+
 
 float drumkv1_param::paramMaxValue(drumkv1::ParamIndex index)
 {
 	return drumkv1_params[index].max;
 }
 
+
 bool drumkv1_param::paramFloat ( drumkv1::ParamIndex index )
 {
 	return (drumkv1_params[index].type == PARAM_FLOAT);
 }
 
+
+bool drumkv1_param::paramBool ( drumkv1::ParamIndex index )
+{
+	return (drumkv1_params[index].type == PARAM_BOOL);
+}
+
+
+bool drumkv1_param::paramInt ( drumkv1::ParamIndex index )
+{
+	return (drumkv1_params[index].type == PARAM_INT);
+}
 
 
 // Element serialization methods.
@@ -341,16 +355,6 @@ void drumkv1_param::saveElements (
 		eElement.appendChild(eParams);
 		eElements.appendChild(eElement);
 	}
-}
-
-bool drumkv1_param::paramBool ( drumkv1::ParamIndex index )
-{
-	return (drumkv1_params[index].type == PARAM_BOOL);
-}
-
-bool drumkv1_param::paramInt ( drumkv1::ParamIndex index )
-{
-	return (drumkv1_params[index].type == PARAM_INT);
 }
 
 
