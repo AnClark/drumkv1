@@ -41,6 +41,9 @@
 // because drumkv1 UI accesses synth engine, see drumkv1widget.cpp.
 #define DISTRHO_PLUGIN_WANT_DIRECT_ACCESS 1
 
+
+#define DISTRHO_PLUGIN_WANT_STATE 1
+
 #endif // DISTRHO_PLUGIN_INFO_H_INCLUDED
 
 // end of DistrhoPluginInfo.h

@@ -22,8 +22,26 @@
 #include "drumkv1_dpf.h"
 #include "drumkv1_param.h"
 #include "drumkv1_config.h"
+#include "drumkv1_sched.h"
 
 #include <QApplication>
+#include <QByteArray>
+#include "QtXml/qdom.h"
+
+// --------------------------------
+// NOTICE: About plugin states
+//
+// Unlike synthv1 and padthv1, drumkv1 has a more sophisticated state.
+// It has two layers of parameters: global parameters, element parameters.
+//
+// In synthv1 and padthv1, plug-in state is simple, so we can directly let DPF handle
+// it in its own state manager, without using Vee-One's XML-based state configurator.
+//
+// However, in drumkv1, "element param" is a dedicated param collection for each sample.
+// Simply depending on DPF's own state management is far not enough.
+//
+// So a better solution is to fetch and store states in drumkv1's own format,
+// then access them via DPF's state API.
 
 //-------------------------------------------------------------------------
 // drumkv1_dpf - Constants.
@@ -242,7 +260,7 @@ void drumkv1_dpf::run(const float **inputs, float **outputs, uint32_t nframes, c
 START_NAMESPACE_DISTRHO
 
 DrumkV1Plugin::DrumkV1Plugin()
-	: Plugin(drumkv1::NUM_PARAMS, 0, 0) // parameters, programs, states
+	: Plugin(drumkv1::NUM_PARAMS, 0, 1) // parameters, programs, states
 {
 	drumkv1_dpf::qapp_instantiate();
 }
@@ -257,6 +275,76 @@ DrumkV1Plugin::~DrumkV1Plugin()
 drumkv1_dpf* DrumkV1Plugin::getSynthesizer()
 {
 	return &(*fSynthesizer);	// Unique pointer -> standard pointer
+}
+
+
+void DrumkV1Plugin::loadStateToSynthesizer(const char *state_data)
+{
+	drumkv1_dpf *pSynthesizer = getSynthesizer();
+
+	QDomDocument doc(DRUMKV1_TITLE);
+	if (doc.setContent(QByteArray(state_data, strlen(state_data)))) {
+		QDomElement eState = doc.documentElement();
+	#if 1//DRUMKV1_LV2_LEGACY
+		if (eState.tagName() == "elements")
+			drumkv1_param::loadElements(pSynthesizer, eState, drumkv1_param::map_path());
+		else
+	#endif
+		if (eState.tagName() == "state") {
+			for (QDomNode nChild = eState.firstChild();
+					!nChild.isNull();
+						nChild = nChild.nextSibling()) {
+				QDomElement eChild = nChild.toElement();
+				if (eChild.isNull())
+					continue;
+				if (eChild.tagName() == "elements")
+					drumkv1_param::loadElements(pSynthesizer, eChild, drumkv1_param::map_path());
+				else
+				if (eChild.tagName() == "tuning")
+					drumkv1_param::loadTuning(pSynthesizer, eChild);
+			}
+		}
+	}
+
+	pSynthesizer->reset();
+}
+
+
+const char* DrumkV1Plugin::exportStateFromSynthesizer()
+{
+	drumkv1_dpf *pSynthesizer = getSynthesizer();
+
+	QDomDocument doc(DRUMKV1_TITLE);
+	QDomElement eState = doc.createElement("state");
+
+	QDomElement eElements = doc.createElement("elements");
+	drumkv1_param::saveElements(pSynthesizer, doc, eElements, drumkv1_param::map_path());
+	eState.appendChild(eElements);
+
+	if (getSynthesizer()->isTuningEnabled()) {
+		QDomElement eTuning = doc.createElement("tuning");
+		drumkv1_param::saveTuning(pSynthesizer, doc, eTuning);
+		eState.appendChild(eTuning);
+	}
+
+	doc.appendChild(eState);
+
+	const QByteArray data(doc.toByteArray());
+	const char *value = data.constData();
+	size_t size = data.size();
+
+	return value;
+}
+
+
+void DrumkV1Plugin::initState(uint32_t index, State& state)
+{
+	if (index == 0) {
+		state.key = "drumkv1_state";
+		state.label = "drumkv1 State";
+		state.hints = kStateIsHostWritable;
+		state.defaultValue = "";
+	}
 }
 
 
@@ -282,19 +370,47 @@ void DrumkV1Plugin::initParameter(uint32_t index, Parameter& parameter)
 
 	// Apply default parameter values for drumkv1 explicitly,
 	// since DPF cannot apply it automatically
+	fParameters[index] = parameter.ranges.def;
 	fSynthesizer->setParamValue(currentParam, parameter.ranges.def);
+}
+
+
+String DrumkV1Plugin::getState(const char* key)
+{
+	d_stderr2(">> getState() invoked. key = %s", key);
+
+	if (strcmp(key, "drumkv1_state") == 0) {
+		d_stderr(">>> Save state to host: \n %s", exportStateFromSynthesizer());
+		return String(exportStateFromSynthesizer());
+	}
+
+	return String();
+}
+
+
+void DrumkV1Plugin::setState(const char* key, const char* value)
+{
+	d_stderr2(">> setState() invoked. key = %s", key);
+
+	if (strcmp(key, "drumkv1_state") == 0) {
+		d_stderr(">>> Read state from host: \n%s", value);
+		loadStateToSynthesizer(value);
+	}
 }
 
 
 float DrumkV1Plugin::getParameterValue(uint32_t index) const
 {
-	return fSynthesizer->paramValue((drumkv1::ParamIndex)index);
+	return fParameters[index];
 }
 
 
 void DrumkV1Plugin::setParameterValue(uint32_t index, float value)
 {
-	fSynthesizer->setParamValue((drumkv1::ParamIndex)index, value);
+	if (index > drumkv1::GEN1_SAMPLE) {
+		fParameters[index] = value;
+		fSynthesizer->setParamValue((drumkv1::ParamIndex)index, value);
+	}
 }
 
 

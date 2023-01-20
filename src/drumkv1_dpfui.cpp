@@ -20,7 +20,6 @@
 *****************************************************************************/
 
 #include "drumkv1_dpfui.h"
-#include "drumkv1_dpf.h"
 
 #include <QWindow>
 #include <QApplication>
@@ -56,7 +55,7 @@ DrumkV1PluginUI::DrumkV1PluginUI()
 
 	// drumkv1 UI requires directly accessing synth instance.
 	// This is discouraged by DPF, but drumkv1 do need this due to its designation.
-	DrumkV1Plugin *fDspInstance = (DrumkV1Plugin*) UI::getPluginInstancePointer();
+	fDspInstance = (DrumkV1Plugin*) UI::getPluginInstancePointer();
 
 	fWidget = new drumkv1widget_dpf(fDspInstance->getSynthesizer(), this);
 
@@ -90,7 +89,25 @@ DrumkV1PluginUI::~DrumkV1PluginUI()
 }
 
 /* --------------------------------------------------------------------------------------------------------
+* Helper APIs */
+
+void DrumkV1PluginUI::saveStateToHost()
+{
+	setState("drumkv1_state", fDspInstance->exportStateFromSynthesizer());
+}
+
+/* --------------------------------------------------------------------------------------------------------
 * DSP/Plugin Callbacks */
+
+/**
+	A state has changed on the plugin side.@n
+	This is called by the host to inform the UI about state changes.
+*/
+void DrumkV1PluginUI::stateChanged(const char* key, const char* value)
+{
+	// TODO: Implement this?
+}
+
 
 /**
 	A parameter has changed on the plugin side.
@@ -190,6 +207,8 @@ drumkv1_dpfui::drumkv1_dpfui(drumkv1_dpf *pSynth, DISTRHO::DrumkV1PluginUI *plug
 void drumkv1_dpfui::write_function(drumkv1::ParamIndex index, float fValue) const
 {
 	m_plugin_ui->setParameterValue(index, fValue);
+
+	m_plugin_ui->saveStateToHost();
 }
 
 // end of drumkv1_dpfui.cpp

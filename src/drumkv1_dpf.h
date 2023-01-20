@@ -101,11 +101,19 @@ class DrumkV1Plugin : public Plugin
 	double fSampleRate = getSampleRate();
 	std::unique_ptr<drumkv1_dpf> fSynthesizer = std::make_unique<drumkv1_dpf>(fSampleRate);
 
+	float fParameters[drumkv1::NUM_PARAMS];
+
 public:
 	DrumkV1Plugin();
 	~DrumkV1Plugin();
 
+	// ----------------------------------------------------------------------------------------------------------------
+	// Public helper APIs
+
 	drumkv1_dpf *getSynthesizer();
+
+	void loadStateToSynthesizer(const char* state_data);
+	const char* exportStateFromSynthesizer();
 
 protected:
 	// ----------------------------------------------------------------------------------------------------------------
@@ -168,11 +176,14 @@ protected:
 	// ----------------------------------------------------------------------------------------------------------------
 	// Init
 
+	void initState(uint32_t index, State& state) override;
 	void initParameter(uint32_t index, Parameter& parameter) override;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// Internal data
 
+	String getState(const char* key);
+	void setState(const char* key, const char* value) override;
 	float getParameterValue(uint32_t index) const override;
 	void setParameterValue(uint32_t index, float value) override;
 

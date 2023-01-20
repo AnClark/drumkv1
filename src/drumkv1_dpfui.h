@@ -23,6 +23,7 @@
 #define __drumkv1_dpfui_h
 
 #include "drumkv1widget_dpf.h"
+#include "drumkv1_dpf.h"
 
 #include "DistrhoUI.hpp"
 //#include "ResizeHandle.hpp" // Not found on DPF?
@@ -45,6 +46,10 @@ class DrumkV1PluginUI : public UI {
 	WId fWinId;
 	WId fParent;
 
+	DrumkV1Plugin *fDspInstance;
+
+	float fParameters[drumkv1::NUM_PARAMS];
+
 	//ResizeHandle fResizeHandle;
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -53,13 +58,16 @@ public:
 	DrumkV1PluginUI();
 	~DrumkV1PluginUI();
 
+	// ----------------------------------------------------------------------------------------------------------------
+	// Helper APIs
+	void saveStateToHost();
+
 protected:
 	// ----------------------------------------------------------------------------------------------------------------
 	// DSP/Plugin Callbacks
 
+	void stateChanged(const char* key, const char* value) override;
 	void parameterChanged(uint32_t index, float value) override;
-	//void programLoaded(uint32_t index) override;
-	//void stateChanged(const char* key, const char* value) override;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// External window overrides
