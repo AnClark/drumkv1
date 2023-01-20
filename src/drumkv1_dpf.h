@@ -31,6 +31,15 @@
 // Forward decls.
 class QApplication;
 
+//-------------------------------------------------------------------------
+// drumkv1_dpf - Constants.
+//
+
+// Plugin states.
+#define DRUMKV1_PRESET_NAME_FOR_DPF_STATE "DPF_PLUGIN_STATE"
+#define DRUMKV1_STATE_KEY "drumkv1_state"
+#define DRUMKV1_STATE_INDEX 0
+
 
 //-------------------------------------------------------------------------
 // drumkv1_dpf - Synthesizer interface decl.
@@ -54,6 +63,9 @@ public:
 		AudioOutR,
 		ParamBase
 	};
+
+	void loadState(const char* state_data);
+	const char* exportState();
 
 	void run(const float **inputs, float **outputs, uint32_t nframes, const MidiEvent* midiEvents, uint32_t midiEventCount);
 
@@ -168,11 +180,14 @@ protected:
 	// ----------------------------------------------------------------------------------------------------------------
 	// Init
 
+	void initState(uint32_t index, State& state) override;
 	void initParameter(uint32_t index, Parameter& parameter) override;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// Internal data
 
+	String getState(const char* key) const override;
+	void setState(const char* key, const char* value) override;
 	float getParameterValue(uint32_t index) const override;
 	void setParameterValue(uint32_t index, float value) override;
 

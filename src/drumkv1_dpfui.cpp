@@ -116,6 +116,10 @@ uintptr_t DrumkV1PluginUI::getNativeWindowHandle() const noexcept
 	return (uintptr_t)fWidget->windowHandle()->winId();
 }
 
+void DrumkV1PluginUI::stateChanged(const char* key, const char* value)
+{
+}
+
 void DrumkV1PluginUI::sizeChanged(uint width, uint height)
 {
 	UI::sizeChanged(width, height);
@@ -183,13 +187,16 @@ END_NAMESPACE_DISTRHO
 //
 
 drumkv1_dpfui::drumkv1_dpfui(drumkv1_dpf *pSynth, DISTRHO::DrumkV1PluginUI *pluginUiInterface)
-	: drumkv1_ui(pSynth, true), m_plugin_ui(pluginUiInterface)
+	: drumkv1_ui(pSynth, true),
+	  m_plugin_ui(pluginUiInterface),
+	  m_synth(pSynth)
 {
 }
 
 void drumkv1_dpfui::write_function(drumkv1::ParamIndex index, float fValue) const
 {
 	m_plugin_ui->setParameterValue(index, fValue);
+	m_plugin_ui->setState(DRUMKV1_STATE_KEY, m_synth->exportState());
 }
 
 // end of drumkv1_dpfui.cpp
